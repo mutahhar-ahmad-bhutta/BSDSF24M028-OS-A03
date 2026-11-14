@@ -74,12 +74,18 @@ int handle_builtin(char** arglist) {
         }
         return 1;
     }
+    else if (strcmp(arglist[0], "history") == 0) {
+        show_history();
+        return 1;
+    }
     else if (strcmp(arglist[0], "help") == 0) {
         printf("Built-in commands:\n");
         printf("  cd <dir>  : change directory\n");
         printf("  exit      : exit the shell\n");
         printf("  help      : show this help\n");
         printf("  jobs      : show background jobs\n");
+        printf("  history   : show command history\n");
+        printf("  !n        : run command number n from history\n");
         return 1;
     }
     else if (strcmp(arglist[0], "jobs") == 0) {
@@ -87,4 +93,38 @@ int handle_builtin(char** arglist) {
         return 1;
     }
     return 0;
+}
+
+// Feature 3: command history
+char* history[HISTORY_SIZE];   // stores the commands
+int history_count = 0;         // total commands typed so far
+
+void add_to_history(char* cmd) {
+    int index = history_count % HISTORY_SIZE;
+    if (history_count >= HISTORY_SIZE) {
+        free(history[index]);          // array is full: remove the oldest
+    }
+    history[index] = strdup(cmd);      // save a copy of the command
+    history_count++;
+}
+
+void show_history() {
+    int start = 0;
+    if (history_count > HISTORY_SIZE) {
+        start = history_count - HISTORY_SIZE;
+    }
+    for (int i = start; i < history_count; i++) {
+        printf("%d  %s\n", i + 1, history[i % HISTORY_SIZE]);
+    }
+}
+
+char* get_history(int n) {
+    int start = 0;
+    if (history_count > HISTORY_SIZE) {
+        start = history_count - HISTORY_SIZE;
+    }
+    if (n <= start || n > history_count) {
+        return NULL;                   // n is out of range
+    }
+    return history[(n - 1) % HISTORY_SIZE];
 }
