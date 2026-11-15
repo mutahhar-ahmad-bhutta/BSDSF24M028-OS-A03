@@ -75,7 +75,7 @@ int execute_pipe(char** arglist, int pipe_pos) {
     return 0;
 }
 
-int execute(char* arglist[]) {
+int execute(char* arglist[], int background) {
     // Feature 5: is there a pipe?
     for (int i = 0; arglist[i] != NULL; i++) {
         if (strcmp(arglist[i], "|") == 0) {
@@ -99,8 +99,58 @@ int execute(char* arglist[]) {
             execvp(arglist[0], arglist);
             perror("Command not found"); // This line runs only if execvp fails
             exit(1);
-        default: // Parent process
-            waitpid(cpid, &status, 0);
+                default: // Parent process
+            if (background) {
+                add_job(cpid, arglist);       // Feature 6: don't wait
+                printf("[%d] started in background\n", cpid);
+            } else {
+                waitpid(cpid, &status, 0);
+            }
             return 0;
+    }
+}
+
+
+// Feature 6: list of background jobs
+int job_pids[MAX_JOBS];
+char job_cmds[MAX_JOBS][MAX_LEN];
+int job_count = 0;
+
+void add_job(int pid, char** arglist) {
+    if (job_count >= MAX_JOBS) return;
+    job_pids[job_count] = pid;
+    job_cmds[job_count][0] = '\0';
+    for (int i = 0; arglist[i] != NULL; i++) {      // join words back into one string
+        strcat(job_cmds[job_count], arglist[i]);
+        strcat(job_cmds[job_count], " ");
+    }
+    job_count++;
+}
+
+// Reap finished background children (zombies) without blocking
+void reap_jobs() {
+    int status;
+    int pid;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        for (int i = 0; i < job_count; i++) {
+            if (job_pids[i] == pid) {
+                printf("[%d] done   %s\n", pid, job_cmds[i]);
+                // remove job i by moving the last job into its place
+                job_pids[i] = job_pids[job_count - 1];
+                strcpy(job_cmds[i], job_cmds[job_count - 1]);
+                job_count--;
+                break;
+            }
+        }
+    }
+}
+
+void show_jobs() {
+    if (job_count == 0) {
+        printf("No background jobs.\n");
+        return;
+    }
+    for (int i = 0; i < job_count; i++) {
+        printf("[%d] %d  %s\n", i + 1, job_pids[i], job_cmds[i]);
     }
 }

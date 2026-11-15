@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+
 #define MAX_LEN 512
 #define MAXARGS 10
 #define ARGLEN 30
@@ -18,7 +19,7 @@
 // Function prototypes
 char* read_cmd(char* prompt, FILE* fp);
 char** tokenize(char* cmdline);
-int execute(char** arglist);
+int execute(char** arglist, int background);
 int handle_builtin(char** arglist);
 
 // Feature 3: history
@@ -26,4 +27,11 @@ int handle_builtin(char** arglist);
 void add_to_history(char* cmd);
 void show_history();
 char* get_history(int n);
+
+// Feature 6: background jobs
+#define MAX_JOBS 20
+void add_job(int pid, char** arglist);
+void reap_jobs();
+void show_jobs();
+
 #endif // SHELL_H
