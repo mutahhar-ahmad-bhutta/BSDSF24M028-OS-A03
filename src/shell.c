@@ -1,4 +1,5 @@
 #include "shell.h"
+#include <ctype.h>
 
 char* read_cmd(char* prompt, FILE* fp) {
     printf("%s", prompt);
@@ -97,6 +98,10 @@ int handle_builtin(char** arglist) {
         show_history();
         return 1;
     }
+    else if (strcmp(arglist[0], "set") == 0) {
+        show_vars();
+        return 1;
+    }
     else if (strcmp(arglist[0], "jobs") == 0) {
                 show_jobs();
         return 1;
@@ -136,4 +141,76 @@ char* get_history(int n) {
         return NULL;                   // n is out of range
     }
     return history[(n - 1) % HISTORY_SIZE];
+}
+
+
+// Feature 8: shell variables stored in a linked list
+struct var {
+    char* name;
+    char* value;
+    struct var* next;
+};
+struct var* var_list = NULL;     // head of the list
+
+// Is this line like NAME=value ? (name: letters, digits, _ ; no spaces before =)
+int is_assignment(char* line) {
+    while (*line == ' ' || *line == '\t') line++;
+    if (!(isalpha(*line) || *line == '_')) return 0;
+    while (isalnum(*line) || *line == '_') line++;
+    return *line == '=';
+}
+
+// Save NAME=value in the list (update it if NAME already exists)
+void do_assignment(char* line) {
+    while (*line == ' ' || *line == '\t') line++;
+    char* eq = strchr(line, '=');
+    char* name = strndup(line, eq - line);
+
+    // value = everything after =, without double quotes and trailing spaces
+    char* value = malloc(strlen(eq + 1) + 1);
+    int k = 0;
+    for (char* p = eq + 1; *p != '\0'; p++) {
+        if (*p != '"') value[k++] = *p;
+    }
+    while (k > 0 && (value[k - 1] == ' ' || value[k - 1] == '\t')) k--;
+    value[k] = '\0';
+
+    for (struct var* v = var_list; v != NULL; v = v->next) {
+        if (strcmp(v->name, name) == 0) {     // already exists: replace value
+            free(v->value);
+            v->value = value;
+            free(name);
+            return;
+        }
+    }
+    struct var* v = malloc(sizeof(struct var)); // new variable: add at front
+    v->name = name;
+    v->value = value;
+    v->next = var_list;
+    var_list = v;
+}
+
+char* get_var(char* name) {
+    for (struct var* v = var_list; v != NULL; v = v->next) {
+        if (strcmp(v->name, name) == 0) return v->value;
+    }
+    return NULL;
+}
+
+void show_vars() {
+    for (struct var* v = var_list; v != NULL; v = v->next) {
+        printf("%s=%s\n", v->name, v->value);
+    }
+}
+
+// Replace every argument that starts with $ by the variable's value
+void expand_variables(char** arglist) {
+    for (int i = 0; arglist[i] != NULL; i++) {
+        if (arglist[i][0] == '$' && arglist[i][1] != '\0') {
+            char* value = get_var(arglist[i] + 1);   // skip the $
+            if (value == NULL) value = "";            // unknown variable = empty
+            free(arglist[i]);                         // free the old "$NAME"
+            arglist[i] = strdup(value);               // new memory for the value
+        }
+    }
 }

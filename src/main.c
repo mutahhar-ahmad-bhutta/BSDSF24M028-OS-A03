@@ -9,8 +9,17 @@ int run_line(char* line) {
     char* saveptr;
     char* part = strtok_r(copy, ";", &saveptr);
 
-    while (part != NULL) {
+        while (part != NULL) {
+        // Feature 8: NAME=value is handled by the shell itself (no fork)
+        if (is_assignment(part)) {
+            do_assignment(part);
+            last_status = 0;
+            part = strtok_r(NULL, ";", &saveptr);
+            continue;
+        }
+
         if ((arglist = tokenize(part)) != NULL) {
+            expand_variables(arglist);          // Feature 8: $NAME -> value
             // Feature 6: is the last word & ?
             int background = 0;
             int last = 0;

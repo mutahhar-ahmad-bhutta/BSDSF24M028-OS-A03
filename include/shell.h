@@ -34,4 +34,11 @@ void add_job(int pid, char** arglist);
 void reap_jobs();
 void show_jobs();
 
+// Feature 8: shell variables
+int is_assignment(char* line);
+void do_assignment(char* line);
+char* get_var(char* name);
+void show_vars();
+void expand_variables(char** arglist);
+
 #endif // SHELL_H
