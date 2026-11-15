@@ -92,6 +92,7 @@ int handle_builtin(char** arglist) {
         printf("  jobs      : show background jobs\n");
         printf("  history   : show command history\n");
         printf("  !n        : run command number n from history\n");
+        printf("  set       : show all shell variables\n");
         return 1;
     }
     else if (strcmp(arglist[0], "history") == 0) {
