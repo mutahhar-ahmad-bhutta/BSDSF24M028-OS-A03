@@ -4,7 +4,7 @@ int main() {
     char* cmdline;
     char** arglist;
 
-    while ((cmdline = read_cmd(PROMPT, stdin)) != NULL) {
+        while ((cmdline = readline(PROMPT)) != NULL) {
         // Feature 3: !n re-execution
         if (cmdline[0] == '!') {
             int n = atoi(cmdline + 1);
@@ -21,7 +21,7 @@ int main() {
 
         // Feature 3: save the command in history
         if (cmdline[0] != '\0') {
-            add_to_history(cmdline);
+            add_history(cmdline);
         }
         if ((arglist = tokenize(cmdline)) != NULL) {
                         if (handle_builtin(arglist) == 0) {
