@@ -48,6 +48,14 @@ char** tokenize(char* cmdline) {
         }
         strncpy(arglist[argnum], start, len);
         arglist[argnum][len] = '\0';
+
+        // Feature 5: remove double quotes, so  grep "root"  searches for root
+        int k = 0;
+        for (int j = 0; arglist[argnum][j] != '\0'; j++) {
+            if (arglist[argnum][j] != '"') arglist[argnum][k++] = arglist[argnum][j];
+        }
+        arglist[argnum][k] = '\0';
+
         argnum++;
     }
 
@@ -60,6 +68,7 @@ char** tokenize(char* cmdline) {
     arglist[argnum] = NULL;
     return arglist;
 }
+
 // Feature 2: built-in commands
 int handle_builtin(char** arglist) {
     if (strcmp(arglist[0], "exit") == 0) {
@@ -74,10 +83,6 @@ int handle_builtin(char** arglist) {
         }
         return 1;
     }
-    else if (strcmp(arglist[0], "history") == 0) {
-        show_history();
-        return 1;
-    }
     else if (strcmp(arglist[0], "help") == 0) {
         printf("Built-in commands:\n");
         printf("  cd <dir>  : change directory\n");
@@ -86,6 +91,10 @@ int handle_builtin(char** arglist) {
         printf("  jobs      : show background jobs\n");
         printf("  history   : show command history\n");
         printf("  !n        : run command number n from history\n");
+        return 1;
+    }
+    else if (strcmp(arglist[0], "history") == 0) {
+        show_history();
         return 1;
     }
     else if (strcmp(arglist[0], "jobs") == 0) {
