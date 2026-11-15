@@ -70,9 +70,10 @@ int execute_pipe(char** arglist, int pipe_pos) {
     // parent: close BOTH ends, otherwise the reader never sees end-of-file
     close(fd[0]);
     close(fd[1]);
+    int status;
     waitpid(left, NULL, 0);
-    waitpid(right, NULL, 0);
-    return 0;
+    waitpid(right, &status, 0);
+    return WEXITSTATUS(status);      // Feature 7: exit code of the last command
 }
 
 int execute(char* arglist[], int background) {
@@ -99,14 +100,14 @@ int execute(char* arglist[], int background) {
             execvp(arglist[0], arglist);
             perror("Command not found"); // This line runs only if execvp fails
             exit(1);
-                default: // Parent process
+               default: // Parent process
             if (background) {
                 add_job(cpid, arglist);       // Feature 6: don't wait
                 printf("[%d] started in background\n", cpid);
-            } else {
-                waitpid(cpid, &status, 0);
+                return 0;
             }
-            return 0;
+            waitpid(cpid, &status, 0);
+            return WEXITSTATUS(status);       // Feature 7: return the exit code
     }
 }
 
